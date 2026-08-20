@@ -36,11 +36,10 @@ function WorkPage() {
       </section>
 
       <section className="project-index" aria-label="전체 작업 목록">
-        {projects.map((project, index) => (
+        {projects.map((project) => (
           <article className="project-entry" key={project.title}>
             <div className="project-poster">
               <img src={project.image} alt={`${project.title} 포스터`} />
-              <span>{String(index + 1).padStart(2, '0')}</span>
             </div>
             <div className="project-info">
               <div className="project-title-block">
