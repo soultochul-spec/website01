@@ -3,14 +3,14 @@ import { createRoot } from 'react-dom/client'
 import './styles.css'
 
 const projects = [
-  { title: '모범택시', type: 'Series · Original Score', year: '2021', image: '/assets/posters/taxi-driver.jpg' },
-  { title: '하이에나', type: 'Series · Original Score', year: '2020', image: '/assets/posters/hyena.jpg' },
-  { title: '홍천기', type: 'Series · Original Score', year: '2021', image: '/assets/posters/lovers-of-the-red-sky.jpg' },
-  { title: '화인가 스캔들', type: 'Series · Original Score', year: '2024', image: '/assets/posters/red-swan.png' },
-  { title: '수색자', type: 'Film · Original Score', year: '2021', image: '/assets/posters/the-searcher.jpg' },
-  { title: '모꼬지 키친', type: 'Series · Original Score', year: '2021', image: '/assets/posters/mokkoji-kitchen.jpg' },
-  { title: '파트타임 멜로', type: 'Series · Original Score', year: '2021', image: '/assets/posters/part-time-melo.jpg' },
-  { title: 'Crypto Conflict', type: 'Documentary · Original Score', year: '2025', image: '/assets/posters/crypto-conflict.jpg' },
+  { title: '모범택시', artist: '윤도현', track: '귀로', role: 'Strings Arrangement', image: '/assets/posters/taxi-driver.jpg' },
+  { title: '하이에나', artist: '신지훈', track: 'Far Away', role: 'Strings Arrangement', image: '/assets/posters/hyena.jpg' },
+  { title: '홍천기', artist: '정효빈', track: '달과 별의 밤', role: 'Strings Arrangement', image: '/assets/posters/lovers-of-the-red-sky.jpg' },
+  { title: '수색자', artist: '박기철', track: 'Prologue 외', role: 'Composer / Arranger', image: '/assets/posters/the-searcher.jpg' },
+  { title: '화인가스캔들', artist: '박기철', track: 'Title 외 다수', role: 'Composer / Arranger', image: '/assets/posters/red-swan.png' },
+  { title: '모꼬지키친', artist: '박기철', track: '다수 Scores', role: 'Composer / Arranger', image: '/assets/posters/mokkoji-kitchen.jpg' },
+  { title: '파트타임멜로', artist: '박기철', track: '다수 Scores', role: 'Composer / Arranger', image: '/assets/posters/part-time-melo.jpg' },
+  { title: 'Cryoti Conflict', artist: '박기철', track: '게임 Score', role: 'Composer / Arranger', image: '/assets/posters/crypto-conflict.jpg' },
 ]
 
 function WorkPage() {
@@ -44,9 +44,11 @@ function WorkPage() {
             </div>
             <div className="project-info">
               <div className="project-title-block">
-                <h2>{project.title}</h2>
-                <p>{project.type}</p>
-                <span>{project.year}</span>
+                <dl className="project-credits">
+                  <div><dt>Artist</dt><dd>{project.artist}</dd></div>
+                  <div><dt>곡명</dt><dd>{project.track}</dd></div>
+                  <div><dt>참여부문</dt><dd>{project.role}</dd></div>
+                </dl>
               </div>
               <div className="project-links" aria-label={`${project.title} 외부 링크 영역`}>
                 <div><span>YouTube</span><b>Link to be added</b></div>
