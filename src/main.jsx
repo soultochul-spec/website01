@@ -37,6 +37,9 @@ const shuffled = (items) => {
   return result
 }
 
+const PREVIEW_DURATION = 30
+const FADE_DURATION = 3
+
 const faqs = [
   ['어떤 프로젝트를 맡나요?', '영화와 시리즈, 아티스트 음반, 광고 및 브랜드 사운드를 중심으로 작업합니다. 프로젝트의 규모보다 음악이 맡아야 할 역할을 먼저 봅니다.'],
   ['보통 제작 기간은 얼마나 걸리나요?', '곡의 수, 러닝타임, 편성에 따라 달라집니다. 브리프를 받은 뒤 현실적인 일정과 마일스톤을 먼저 제안합니다.'],
@@ -55,8 +58,11 @@ function App() {
   const [trackIndex, setTrackIndex] = useState(-1)
   const [elapsed, setElapsed] = useState(0)
   const [openFaq, setOpenFaq] = useState(0)
+  const [aboutVisible, setAboutVisible] = useState(false)
   const audioRef = useRef(null)
   const playlistRef = useRef([])
+  const previewStartRef = useRef(0)
+  const aboutRef = useRef(null)
 
   useLayoutEffect(() => {
     const jumpToHash = () => {
@@ -76,6 +82,15 @@ function App() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      setAboutVisible(entry.isIntersecting)
+    }, { threshold: 0.35 })
+
+    if (aboutRef.current) observer.observe(aboutRef.current)
+    return () => observer.disconnect()
+  }, [])
+
   const go = (id) => {
     setMenuOpen(false)
     document.querySelector(id)?.scrollIntoView({ behavior: 'smooth' })
@@ -85,12 +100,18 @@ function App() {
     const next = playlistRef.current[index]
     const audio = audioRef.current
     audio.src = `/music/${encodeURIComponent(next.file)}`
-    audio.currentTime = 0
+    audio.volume = 0
     setCurrentTrack(next)
     setTrackIndex(index)
     setElapsed(0)
     setPlayerOpen(true)
-    audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false))
+    audio.onloadedmetadata = () => {
+      const latestStart = Math.max(0, audio.duration - PREVIEW_DURATION)
+      previewStartRef.current = Math.random() * latestStart
+      audio.currentTime = previewStartRef.current
+      audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false))
+    }
+    audio.load()
   }
 
   const playRandom = () => {
@@ -119,11 +140,16 @@ function App() {
   }
 
   const updatePlayback = () => {
-    const time = Math.min(audioRef.current.currentTime, 50)
+    const audio = audioRef.current
+    const time = Math.min(Math.max(0, audio.currentTime - previewStartRef.current), PREVIEW_DURATION)
     setElapsed(time)
-    if (time >= 50) {
-      audioRef.current.pause()
-      setPlaying(false)
+    if (time < FADE_DURATION) audio.volume = time / FADE_DURATION
+    else if (time > PREVIEW_DURATION - FADE_DURATION) audio.volume = (PREVIEW_DURATION - time) / FADE_DURATION
+    else audio.volume = 1
+
+    if (time >= PREVIEW_DURATION) {
+      audio.volume = 0
+      skipTrack(1)
     }
   }
 
@@ -162,14 +188,15 @@ function App() {
         <p className="scroll-cue">Scroll to discover <span>↓</span></p>
       </section>
 
-      <section className="about section" id="about">
+      <section className={`about section ${aboutVisible ? 'about--visible' : ''}`} id="about">
         <div className="section-label"><span>( About )</span><span>Based in Seoul · Working worldwide</span></div>
-        <h2>Every story has a frequency.</h2>
-        <div className="about-grid">
+        <div ref={aboutRef} className="about-grid">
           <div className="portrait" role="img" aria-label="피아노 건반과 악보가 놓인 작곡 스튜디오" />
-          <div className="about-copy">
-            <p>영화, 드라마, 음반과 브랜드를 위한 음악을 만듭니다. 장면의 온도와 인물의 숨, 말 사이의 침묵까지 듣고 꼭 필요한 소리만 남깁니다.</p>
-            <button className="round-link">My story <Arrow /></button>
+          <div className="about-image-content">
+            <h2>Every story has a Frequency.</h2>
+            <div className="about-copy">
+              <p><span>영화, 드라마, 음반과<br />브랜드를 위한 음악.</span><span>장면의 온도와<br />인물의 숨,<br />말 사이의 침묵.</span><span>꼭 필요한 소리만.</span></p>
+            </div>
           </div>
         </div>
         <div className="poster-reel" aria-label="참여 작품 포스터">
@@ -192,7 +219,7 @@ function App() {
 
       <section className="services section dark" id="services">
         <div className="section-label"><span>( Services )</span><span>What I do</span></div>
-        <h2>From first note<br />to final <em>mix.</em></h2>
+        <h2>From first note to final <em>mix.</em></h2>
         <div className="service-list">
           {services.map(([no, title, desc]) => (
             <article key={no} tabIndex="0">
@@ -206,7 +233,7 @@ function App() {
       <section className="education section dark" id="education">
         <div className="section-label"><span>( Education )</span><span>15 years of mentoring</span></div>
         <div className="education-heading">
-          <h2>Technique serves<br />your <em>instinct.</em></h2>
+          <h2>Technique serves your <em>instinct.</em></h2>
           <div className="education-years"><strong>15</strong><span>Years<br />teaching</span></div>
         </div>
         <div className="education-image">
@@ -220,11 +247,6 @@ function App() {
             <button className="education-link">Explore education <Arrow /></button>
           </div>
         </div>
-      </section>
-
-      <section className="quote">
-        <p>“The music didn’t just support the scene.<br />It revealed what the characters<br />couldn’t say.”</p>
-        <span>— Min Lee, Film Director</span>
       </section>
 
       <section className="faq section">
@@ -251,15 +273,15 @@ function App() {
         </div>
       </footer>
 
-      <audio ref={audioRef} onTimeUpdate={updatePlayback} onEnded={() => setPlaying(false)} />
+      <audio ref={audioRef} onTimeUpdate={updatePlayback} onEnded={() => skipTrack(1)} />
       {playerOpen && <div className="player" role="region" aria-label="음악 미리듣기 플레이어">
         <div className="player-controls">
           <button onClick={() => skipTrack(-1)} aria-label="이전 트랙">│◀</button>
           <button className="player-pause" onClick={togglePlayback} aria-label={playing ? '일시정지' : '재생'}>{playing ? 'Ⅱ' : '▶'}</button>
           <button onClick={() => skipTrack(1)} aria-label="다음 트랙">▶│</button>
         </div>
-        <div><b>{currentTrack?.title}</b><span>Random preview · 50 sec</span></div>
-        <span className="time">{formatTime(elapsed)}</span><div className="progress"><i style={{ width: `${(elapsed / 50) * 100}%` }} /></div><span className="time">0:50</span>
+        <div><b>{currentTrack?.title}</b><span>Random preview · 30 sec</span></div>
+        <span className="time">{formatTime(elapsed)}</span><div className="progress"><i style={{ width: `${(elapsed / PREVIEW_DURATION) * 100}%` }} /></div><span className="time">0:30</span>
         <button className="player-close" onClick={closePlayer} aria-label="플레이어 닫기">×</button>
       </div>}
     </main>
