@@ -17,22 +17,21 @@ function WorkPage() {
   return (
     <main className="work-page">
       <header className="work-nav">
-        <a className="wordmark" href="/">DoubleY<span>®</span></a>
+        <a className="wordmark" href="/index.html#top">DoubleY<span>®</span></a>
         <nav aria-label="주요 메뉴">
-          <a href="/">Home</a>
-          <a href="/#about">About</a>
+          <a href="/index.html#top">Home</a>
+          <a href="/index.html#about">About</a>
           <a className="active" href="/work.html">Work</a>
-          <a href="/#services">Services</a>
-          <a href="/#education">Education</a>
-          <a href="/">Store</a>
-          <a href="/#contact">Contact</a>
+          <a href="/index.html#services">Services</a>
+          <a href="/index.html#education">Education</a>
+          <a href="/index.html#top">Store</a>
+          <a href="/index.html#contact">Contact</a>
         </nav>
-        <a className="back-home" href="/">Back home ↗</a>
+        <a className="back-home" href="/index.html#top">Back home ↗</a>
       </header>
 
       <section className="work-page-hero">
-        <p>( Selected Work )</p>
-        <h1>Stories,<br /><em>in sound.</em></h1>
+        <h1>Stories, <em>in sound.</em></h1>
         <div><span>Film · Series · Artist · Brand</span><span>2020 — 2025</span></div>
       </section>
 
@@ -44,9 +43,15 @@ function WorkPage() {
               <span>{String(index + 1).padStart(2, '0')}</span>
             </div>
             <div className="project-info">
-              <h2>{project.title}</h2>
-              <p>{project.type}</p>
-              <span>{project.year}</span>
+              <div className="project-title-block">
+                <h2>{project.title}</h2>
+                <p>{project.type}</p>
+                <span>{project.year}</span>
+              </div>
+              <div className="project-links" aria-label={`${project.title} 외부 링크 영역`}>
+                <div><span>YouTube</span><b>Link to be added</b></div>
+                <div><span>Streaming</span><b>Link to be added</b></div>
+              </div>
             </div>
           </article>
         ))}

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 
@@ -57,6 +57,18 @@ function App() {
   const [openFaq, setOpenFaq] = useState(0)
   const audioRef = useRef(null)
   const playlistRef = useRef([])
+
+  useLayoutEffect(() => {
+    const jumpToHash = () => {
+      if (!window.location.hash) return
+      const target = document.querySelector(window.location.hash)
+      target?.scrollIntoView({ behavior: 'auto', block: 'start' })
+    }
+
+    jumpToHash()
+    window.addEventListener('hashchange', jumpToHash)
+    return () => window.removeEventListener('hashchange', jumpToHash)
+  }, [])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -184,7 +196,8 @@ function App() {
         <div className="service-list">
           {services.map(([no, title, desc]) => (
             <article key={no} tabIndex="0">
-              <span>{no}</span><h3>{title}</h3><p>{desc}</p><Arrow />
+              <span className="service-number">{no}</span>
+              <h3>{title}</h3><p>{desc}</p><Arrow />
             </article>
           ))}
         </div>
