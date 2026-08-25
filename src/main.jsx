@@ -62,10 +62,12 @@ function App() {
   const [elapsed, setElapsed] = useState(0)
   const [openFaq, setOpenFaq] = useState(0)
   const [aboutVisible, setAboutVisible] = useState(false)
+  const [educationVisible, setEducationVisible] = useState(false)
   const audioRef = useRef(null)
   const playlistRef = useRef([])
   const previewStartRef = useRef(0)
   const aboutRef = useRef(null)
+  const educationRef = useRef(null)
   const heroRef = useRef(null)
   const heroCanvasRef = useRef(null)
 
@@ -187,6 +189,15 @@ function App() {
     }, { threshold: 0.35 })
 
     if (aboutRef.current) observer.observe(aboutRef.current)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      setEducationVisible(entry.isIntersecting)
+    }, { threshold: 0.28 })
+
+    if (educationRef.current) observer.observe(educationRef.current)
     return () => observer.disconnect()
   }, [])
 
@@ -332,21 +343,19 @@ function App() {
         </div>
       </section>
 
-      <section className="education section dark" id="education">
-        <div className="section-label"><span>( Education )</span><span>15 years of mentoring</span></div>
-        <div className="education-heading">
-          <h2>Technique serves your <em>instinct.</em></h2>
-          <div className="education-years"><strong>15</strong><span>Years<br />teaching</span></div>
-        </div>
-        <div className="education-image">
+      <section ref={educationRef} className={`education section dark ${educationVisible ? 'education--visible' : ''}`} id="education">
+        <div className="section-label"><span>( Education )</span></div>
+        <div className="education-visual">
           <img src="/assets/education-mentoring.png" alt="스튜디오에서 악보를 함께 살펴보며 진행하는 일대일 작곡 교육" />
-        </div>
-        <div className="education-copy">
-          <p className="education-lead">정답을 가르치기보다,<br />당신만의 소리가 선명해지도록.</p>
-          <div>
-            <p>15년 동안 수많은 음악가의 시작과 성장을 함께했습니다. 이미 지닌 감각을 섬세하게 읽고, 막연했던 영감을 자신 있게 완성할 수 있는 역량으로 연결합니다.</p>
-            <p>기술은 표현을 가두는 규칙이 아니라 가능성을 넓히는 도구여야 합니다. 각자의 속도와 언어를 존중하며, 다른 누구도 아닌 자신의 음악에 가까워지는 시간을 만듭니다.</p>
-            <button className="education-link">Explore education <Arrow /></button>
+          <div className="education-blur" />
+          <div className="education-overlay">
+            <h2>당신의 감각을, <em>음악의 언어로.</em></h2>
+            <p className="education-lead">당신만의 소리가 선명해지도록.</p>
+            <div className="education-body">
+              <p>15년간 수많은 음악가가 자신의 감각을 실제 작업 역량으로 발전시키는 과정을 함께했습니다. 각자가 지닌 고유한 음악적 언어를 발견하고, 아이디어를 완성도 높은 결과물로 구현할 수 있도록 이끌어왔습니다. 함께 성장한 음악가들은 현재 영화, 드라마, 게임, 뮤지컬 등 다양한 콘텐츠 음악 현장에서 전문적으로 활동하며 저마다의 음악적 여정을 이어가고 있습니다.</p>
+              <p>기술은 표현을 가두는 규칙이 아니라 가능성을 넓히는 도구여야 합니다. 각자의 속도와 언어를 존중하며, 다른 누구도 아닌 자신의 음악에 가까워지는 시간을 만듭니다.</p>
+              <button className="education-link">Explore education <Arrow /></button>
+            </div>
           </div>
         </div>
       </section>
