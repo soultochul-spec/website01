@@ -33,3 +33,10 @@ test('about uses the string quartet image with a left-side readability gradient'
   assert.match(styles, /linear-gradient\(90deg,rgba\(0,0,0,\.88\)/)
   assert.match(styles, /background-position:60% center/)
 })
+
+test('about copy pauses longer after each sentence and adds space after the second sentence', () => {
+  assert.match(styles, /\.about-copy p span:nth-child\(2\)\s*\{[^}]*margin-bottom:\.775em/)
+  assert.match(styles, /span:nth-child\(1\)[^{]*\{[^}]*2\.12s forwards/)
+  assert.match(styles, /span:nth-child\(2\)[^{]*\{[^}]*3\.32s forwards/)
+  assert.match(styles, /span:nth-child\(3\)[^{]*\{[^}]*4\.52s forwards/)
+})
