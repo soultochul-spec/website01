@@ -1,14 +1,18 @@
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import test from 'node:test'
 
 const main = readFileSync(new URL('../src/main.jsx', import.meta.url), 'utf8')
 const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8')
 
 test('hero uses a 120-frame WebP scroll canvas', () => {
+  const desktopFrames = readdirSync(new URL('../public/assets/hero-scroll-frames/', import.meta.url)).filter((file) => file.endsWith('.webp'))
+  const mobileFrames = readdirSync(new URL('../public/assets/hero-scroll-frames-mobile/', import.meta.url)).filter((file) => file.endsWith('.webp'))
+
   assert.match(main, /HERO_FRAME_COUNT = 120/)
   assert.match(main, /className="hero-canvas"/)
-  assert.match(main, /hero-scroll-frames\/frame-/)
+  assert.equal(desktopFrames.length, 120)
+  assert.equal(mobileFrames.length, 120)
 })
 
 test('hero stage remains pinned while the frame sequence advances', () => {

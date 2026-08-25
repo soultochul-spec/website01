@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { getHeroFrameSrc, getHeroFrameWindow } from './heroFrameWindow.js'
 import './styles.css'
 
 const services = [
@@ -40,7 +41,7 @@ const shuffled = (items) => {
 const PREVIEW_DURATION = 30
 const FADE_DURATION = 3
 const HERO_FRAME_COUNT = 120
-const heroFrameSrc = (index) => `/assets/hero-scroll-frames/frame-${String(index + 1).padStart(3, '0')}.webp`
+const HERO_CACHE_LIMIT = 12
 
 const faqs = [
   ['어떤 프로젝트를 맡나요?', '영화와 시리즈, 아티스트 음반, 광고 및 브랜드 사운드를 중심으로 작업합니다. 프로젝트의 규모보다 음악이 맡아야 할 역할을 먼저 봅니다.'],
@@ -93,7 +94,8 @@ function App() {
     if (!hero || !canvas || !context) return undefined
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
 
-    const frames = Array.from({ length: HERO_FRAME_COUNT }, () => null)
+    const mobileFrames = window.matchMedia('(max-width: 800px)').matches
+    const frames = new Map()
     let requestedFrame = 0
     let drawnFrame = -1
     let animationFrame = 0
@@ -120,9 +122,9 @@ function App() {
 
     const drawRequestedFrame = () => {
       animationFrame = 0
-      let candidate = requestedFrame
-      while (candidate > 0 && !frames[candidate]?.complete) candidate -= 1
-      const image = frames[candidate]
+      const candidate = getHeroFrameWindow(requestedFrame, HERO_FRAME_COUNT, HERO_CACHE_LIMIT)
+        .find((index) => frames.get(index)?.complete && frames.get(index)?.naturalWidth)
+      const image = frames.get(candidate)
       if (!image?.naturalWidth || candidate === drawnFrame) return
       drawCover(image)
       drawnFrame = candidate
@@ -132,21 +134,34 @@ function App() {
       if (!animationFrame) animationFrame = requestAnimationFrame(drawRequestedFrame)
     }
 
+    const loadFrameWindow = () => {
+      const needed = getHeroFrameWindow(requestedFrame, HERO_FRAME_COUNT, HERO_CACHE_LIMIT)
+      const neededSet = new Set(needed)
+
+      frames.forEach((image, index) => {
+        if (neededSet.has(index)) return
+        image.onload = null
+        frames.delete(index)
+      })
+
+      needed.forEach((index) => {
+        if (frames.has(index)) return
+        const image = new Image()
+        image.decoding = 'async'
+        image.onload = requestDraw
+        image.src = getHeroFrameSrc(index, mobileFrames)
+        frames.set(index, image)
+      })
+    }
+
     const updateFrame = () => {
       const bounds = hero.getBoundingClientRect()
       const scrollable = Math.max(hero.offsetHeight - window.innerHeight, 1)
       const progress = Math.min(Math.max(-bounds.top / scrollable, 0), 1)
       requestedFrame = Math.round(progress * (HERO_FRAME_COUNT - 1))
+      loadFrameWindow()
       requestDraw()
     }
-
-    frames.forEach((_, index) => {
-      const image = new Image()
-      image.decoding = 'async'
-      image.onload = requestDraw
-      image.src = heroFrameSrc(index)
-      frames[index] = image
-    })
 
     const resize = () => {
       drawnFrame = -1
@@ -161,7 +176,8 @@ function App() {
       cancelAnimationFrame(animationFrame)
       window.removeEventListener('scroll', updateFrame)
       window.removeEventListener('resize', resize)
-      frames.forEach((image) => { if (image) image.onload = null })
+      frames.forEach((image) => { image.onload = null })
+      frames.clear()
     }
   }, [])
 
