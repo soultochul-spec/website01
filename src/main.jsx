@@ -39,6 +39,8 @@ const shuffled = (items) => {
 
 const PREVIEW_DURATION = 30
 const FADE_DURATION = 3
+const HERO_FRAME_COUNT = 120
+const heroFrameSrc = (index) => `/assets/hero-scroll-frames/frame-${String(index + 1).padStart(3, '0')}.webp`
 
 const faqs = [
   ['어떤 프로젝트를 맡나요?', '영화와 시리즈, 아티스트 음반, 광고 및 브랜드 사운드를 중심으로 작업합니다. 프로젝트의 규모보다 음악이 맡아야 할 역할을 먼저 봅니다.'],
@@ -63,6 +65,8 @@ function App() {
   const playlistRef = useRef([])
   const previewStartRef = useRef(0)
   const aboutRef = useRef(null)
+  const heroRef = useRef(null)
+  const heroCanvasRef = useRef(null)
 
   useLayoutEffect(() => {
     const jumpToHash = () => {
@@ -80,6 +84,85 @@ function App() {
     const onScroll = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    const hero = heroRef.current
+    const canvas = heroCanvasRef.current
+    const context = canvas?.getContext('2d')
+    if (!hero || !canvas || !context) return undefined
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
+
+    const frames = Array.from({ length: HERO_FRAME_COUNT }, () => null)
+    let requestedFrame = 0
+    let drawnFrame = -1
+    let animationFrame = 0
+
+    const drawCover = (image) => {
+      const width = canvas.clientWidth
+      const height = canvas.clientHeight
+      const ratio = Math.min(window.devicePixelRatio || 1, 2)
+      const outputWidth = Math.round(width * ratio)
+      const outputHeight = Math.round(height * ratio)
+
+      if (canvas.width !== outputWidth || canvas.height !== outputHeight) {
+        canvas.width = outputWidth
+        canvas.height = outputHeight
+      }
+
+      const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight)
+      const drawWidth = image.naturalWidth * scale
+      const drawHeight = image.naturalHeight * scale
+      context.setTransform(ratio, 0, 0, ratio, 0, 0)
+      context.clearRect(0, 0, width, height)
+      context.drawImage(image, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight)
+    }
+
+    const drawRequestedFrame = () => {
+      animationFrame = 0
+      let candidate = requestedFrame
+      while (candidate > 0 && !frames[candidate]?.complete) candidate -= 1
+      const image = frames[candidate]
+      if (!image?.naturalWidth || candidate === drawnFrame) return
+      drawCover(image)
+      drawnFrame = candidate
+    }
+
+    const requestDraw = () => {
+      if (!animationFrame) animationFrame = requestAnimationFrame(drawRequestedFrame)
+    }
+
+    const updateFrame = () => {
+      const bounds = hero.getBoundingClientRect()
+      const scrollable = Math.max(hero.offsetHeight - window.innerHeight, 1)
+      const progress = Math.min(Math.max(-bounds.top / scrollable, 0), 1)
+      requestedFrame = Math.round(progress * (HERO_FRAME_COUNT - 1))
+      requestDraw()
+    }
+
+    frames.forEach((_, index) => {
+      const image = new Image()
+      image.decoding = 'async'
+      image.onload = requestDraw
+      image.src = heroFrameSrc(index)
+      frames[index] = image
+    })
+
+    const resize = () => {
+      drawnFrame = -1
+      requestDraw()
+      updateFrame()
+    }
+
+    updateFrame()
+    window.addEventListener('scroll', updateFrame, { passive: true })
+    window.addEventListener('resize', resize)
+    return () => {
+      cancelAnimationFrame(animationFrame)
+      window.removeEventListener('scroll', updateFrame)
+      window.removeEventListener('resize', resize)
+      frames.forEach((image) => { if (image) image.onload = null })
+    }
   }, [])
 
   useEffect(() => {
@@ -172,26 +255,29 @@ function App() {
         <button className="menu" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-label="메뉴 열기">{menuOpen ? 'Close' : 'Menu'}</button>
       </header>
 
-      <section className="hero" id="top">
-        <img src="/assets/composer-hero.png" alt="새벽빛이 드는 스튜디오에서 피아노를 연주하는 작곡가" />
-        <div className="hero-shade" />
-        <div className="hero-copy">
-          <p className="eyebrow">Composer · Producer · Seoul</p>
-          <h1>Music for<br />stories <em>felt.</em></h1>
-          <div className="hero-bottom">
-            <p>화면 너머에 오래 남는 감정을<br />음악으로 설계합니다.</p>
-            <div className="hero-actions">
-              <button className="button button--light" onClick={playRandom}>Play Reel <span>▶</span></button>
+      <section ref={heroRef} className="hero" id="top">
+        <div className="hero-stage">
+          <img className="hero-fallback" src="/assets/composer-hero-no-person.png" alt="새벽빛이 드는 피아노와 신시사이저 스튜디오" />
+          <canvas ref={heroCanvasRef} className="hero-canvas" aria-hidden="true" />
+          <div className="hero-shade" />
+          <div className="hero-copy">
+            <p className="eyebrow">Composer · Producer · Seoul</p>
+            <h1>Music for<br />stories <em>felt.</em></h1>
+            <div className="hero-bottom">
+              <p>화면 너머에 오래 남는 감정을<br />음악으로 설계합니다.</p>
+              <div className="hero-actions">
+                <button className="button button--light" onClick={playRandom}>Play Reel <span>▶</span></button>
+              </div>
             </div>
           </div>
+          <p className="scroll-cue">Scroll to discover <span>↓</span></p>
         </div>
-        <p className="scroll-cue">Scroll to discover <span>↓</span></p>
       </section>
 
       <section className={`about section ${aboutVisible ? 'about--visible' : ''}`} id="about">
         <div className="section-label"><span>( About )</span><span>Based in Seoul · Working worldwide</span></div>
         <div ref={aboutRef} className="about-grid">
-          <div className="portrait" role="img" aria-label="피아노 건반과 악보가 놓인 작곡 스튜디오" />
+          <div className="portrait" role="img" aria-label="녹음 부스에서 현악 4중주를 녹음하는 장면" />
           <div className="about-image-content">
             <h2>Every story has a Frequency.</h2>
             <div className="about-copy">
